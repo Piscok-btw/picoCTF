@@ -14,7 +14,7 @@ Debuginfo:  Yes
 Jika di lihat,function dari main ini hanya akan menjalankan function dari `echo_valley ` ,sedangkan ada function yang memberikan kita flag yaitu pada `print_flag`.Namun,function itu sendiri tidak dijalankan langsung oleh main,jadi disini menurut saya,kita harus menggunakan format string bug arbitrary write
 agar kita bisa trigger fungsi `print_flag` ini dan kita mendapatkan flag nya.
 
-```markdown
+```
 ```asm
 0x0000000000001401 <+0>:     endbr64
    0x0000000000001405 <+4>:     push   rbp
