@@ -1,2 +1,2 @@
 # picoCTF
-jst my solve chall dump
+jst my dump for picoCTF
