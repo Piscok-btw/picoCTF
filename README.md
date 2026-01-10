@@ -1,2 +1,2 @@
 # picoCTF
-jst my dump for picoCTF
+PicoCTF solved dump
