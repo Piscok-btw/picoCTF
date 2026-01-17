@@ -1,6 +1,60 @@
 # Binary Gauntlet 3
 
+Di challenge ini, kita di berikan 2 file yaitu file elf , dan `libc-2.27.so`. dengan adanya `libc-2.27.so` saya mengasumsikan bahwa chall ini memiliki kerentanan `ret2libc` . Kemudian, disini saya langsung saja debugging menggunakan `pwndng`.
+
 ```c
+❯ checksec --file=gauntlet
+RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH      Symbols         FORTIFY Fortified       Fortifiable     FILE                                           
+Partial RELRO   No canary found   NX enabled    No PIE          No RPATH   No RUNPATH   67 Symbols        No    0               3               gauntlet
+```
+
+```c
+pwndbg> disass main
+Dump of assembler code for function main:
+   0x0000000000400687 <+0>:     push   rbp
+   0x0000000000400688 <+1>:     mov    rbp,rsp
+   0x000000000040068b <+4>:     add    rsp,0xffffffffffffff80
+   0x000000000040068f <+8>:     mov    DWORD PTR [rbp-0x74],edi
+   0x0000000000400692 <+11>:    mov    QWORD PTR [rbp-0x80],rsi
+   0x0000000000400696 <+15>:    mov    edi,0x3e8
+   0x000000000040069b <+20>:    call   0x400580 <malloc@plt>
+   0x00000000004006a0 <+25>:    mov    QWORD PTR [rbp-0x8],rax
+   0x00000000004006a4 <+29>:    mov    rdx,QWORD PTR [rip+0x2009b5]        # 0x601060 <stdin@@GLIBC_2.2.5>
+   0x00000000004006ab <+36>:    mov    rax,QWORD PTR [rbp-0x8]
+   0x00000000004006af <+40>:    mov    esi,0x3e8
+   0x00000000004006b4 <+45>:    mov    rdi,rax
+   0x00000000004006b7 <+48>:    call   0x400570 <fgets@plt>
+   0x00000000004006bc <+53>:    mov    rax,QWORD PTR [rbp-0x8]
+   0x00000000004006c0 <+57>:    add    rax,0x3e7
+   0x00000000004006c6 <+63>:    mov    BYTE PTR [rax],0x0
+   0x00000000004006c9 <+66>:    mov    rax,QWORD PTR [rbp-0x8]
+   0x00000000004006cd <+70>:    mov    rdi,rax
+   0x00000000004006d0 <+73>:    mov    eax,0x0
+   0x00000000004006d5 <+78>:    call   0x400560 <printf@plt>
+   0x00000000004006da <+83>:    mov    rax,QWORD PTR [rip+0x20096f]        # 0x601050 <stdout@@GLIBC_2.2.5>
+   0x00000000004006e1 <+90>:    mov    rdi,rax
+   0x00000000004006e4 <+93>:    call   0x400590 <fflush@plt>
+   0x00000000004006e9 <+98>:    mov    rdx,QWORD PTR [rip+0x200970]        # 0x601060 <stdin@@GLIBC_2.2.5>
+   0x00000000004006f0 <+105>:   mov    rax,QWORD PTR [rbp-0x8]
+   0x00000000004006f4 <+109>:   mov    esi,0x3e8
+   0x00000000004006f9 <+114>:   mov    rdi,rax
+   0x00000000004006fc <+117>:   call   0x400570 <fgets@plt>
+   0x0000000000400701 <+122>:   mov    rax,QWORD PTR [rbp-0x8]
+   0x0000000000400705 <+126>:   add    rax,0x3e7
+   0x000000000040070b <+132>:   mov    BYTE PTR [rax],0x0
+   0x000000000040070e <+135>:   mov    rdx,QWORD PTR [rbp-0x8]
+   0x0000000000400712 <+139>:   lea    rax,[rbp-0x70]
+   0x0000000000400716 <+143>:   mov    rsi,rdx
+   0x0000000000400719 <+146>:   mov    rdi,rax
+   0x000000000040071c <+149>:   call   0x400550 <strcpy@plt>
+   0x0000000000400721 <+154>:   mov    eax,0x0
+   0x0000000000400726 <+159>:   leave
+   0x0000000000400727 <+160>:   ret
+End of assembler dump.
+```
+Jika dilihat dari function `main` , terdapat kerentanan berupa format strings, ini bisa kita manfaatkan untuk leak address libc nantinya.Karena overflow dari strcpy langsung menimpa RIP dengan offset 120 byte, maka exploit paling simpel adalah lompat ke one-gadget di libc untuk mendapatkan shell.
+ 
+ ```c
 pwndbg> tele 18
 00:0000│ rsp 0x7fffffffde30 —▸ 0x7fffffffdfd8 —▸ 0x7fffffffe29d ◂— '/home/aku/picoCTF/binary gauntlet 3/gauntlet'
 01:0008│-078 0x7fffffffde38 ◂— 0x1006a0000
